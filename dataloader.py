@@ -1,11 +1,14 @@
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
+import os, os.path
+import torch
+from PIL import *
 
 
-class FaceLandmarksDataset(Dataset):
+class MapillaryLoader(Dataset):
     """Face Landmarks dataset."""
 
-    def __init__(self, csv_file, root_dir, transform=None):
+    def __init__(self, root_dir, ver, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -13,26 +16,30 @@ class FaceLandmarksDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.landmarks_frame = pd.read_csv(csv_file)
-        self.root_dir = root_dir
+        self.ver = "v1.2" if ver else "v2.0"
+
+        self.samples_path = os.path.join(root_dir, "training", "images")
+        self.labels_path = os.path.join(root_dir, "training", self.ver, "labels")
+
         self.transform = transform
 
     def __len__(self):
-        return len(self.landmarks_frame)
+        return len(next(os.walk(self.samples_path))[2])
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        img_name = os.path.join(self.root_dir,
-                                self.landmarks_frame.iloc[idx, 0])
-        image = io.imread(img_name)
-        landmarks = self.landmarks_frame.iloc[idx, 1:]
-        landmarks = np.array([landmarks])
-        landmarks = landmarks.astype('float').reshape(-1, 2)
-        sample = {'image': image, 'landmarks': landmarks}
+        img_name = next(os.walk(self.samples_path))[2][idx].split('.')[0]
+
+        base_img = Image.open(os.path.join(self.samples_path, img_name+".jpg"))
+        label_img = Image.open(os.path.join(self.labels_path, img_name+".png"))
+
+
+        sample = {'image': base_img, 'label': label_img}
 
         if self.transform:
-            sample = self.transform(sample)
+            sample['image'] = self.transform(sample['image'])
+            #sample['label'] = self.transform(sample['label'])
 
         return sample
