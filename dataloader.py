@@ -8,7 +8,7 @@ from PIL import *
 class MapillaryLoader(Dataset):
     """Face Landmarks dataset."""
 
-    def __init__(self, root_dir, ver, transform=None):
+    def __init__(self, root_dir, ver, transform_in = None, transform_ou = None, mode = 'tra'):
         """
         Args:
             csv_file (string): Path to the csv file with annotations.
@@ -18,13 +18,22 @@ class MapillaryLoader(Dataset):
         """
         self.ver = "v1.2" if ver else "v2.0"
 
-        self.samples_path = os.path.join(root_dir, "training", "images")
-        self.labels_path = os.path.join(root_dir, "training", self.ver, "labels")
+        if mode == "tra":
+            self.samples_path = os.path.join(root_dir, "training", "images")
+            self.labels_path = os.path.join(root_dir, "training", self.ver, "labels")
+        elif mode == "val":
+            self.samples_path = os.path.join(root_dir, "validation", "images")
+            self.labels_path = os.path.join(root_dir, "validation", self.ver, "labels")
+        else:
+            self.samples_path = os.path.join(root_dir, "testing", "images")
+            self.labels_path = os.path.join(root_dir, "testing", self.ver, "labels")
 
-        self.transform = transform
+        self.transform_in = transform_in
+        self.transform_ou = transform_ou
 
     def __len__(self):
         return len(next(os.walk(self.samples_path))[2])
+        #return 100
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -38,8 +47,10 @@ class MapillaryLoader(Dataset):
 
         sample = {'image': base_img, 'label': label_img}
 
-        if self.transform:
-            sample['image'] = self.transform(sample['image'])
-            #sample['label'] = self.transform(sample['label'])
+
+        if self.transform_in:
+            sample['image'] = self.transform_in(sample['image'])
+        if self.transform_ou:
+            sample['label'] = self.transform_ou(sample['label'])
 
         return sample
