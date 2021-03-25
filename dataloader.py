@@ -41,8 +41,8 @@ class MapillaryLoader(Dataset):
 
         img_name = next(os.walk(self.samples_path))[2][idx].split('.')[0]
 
-        base_img = Image.open(os.path.join(self.samples_path, img_name+".jpg"))
-        label_img = Image.open(os.path.join(self.labels_path, img_name+".png"))
+        base_img = Image.open(os.path.join(self.samples_path, img_name + ".jpg"))
+        label_img = Image.open(os.path.join(self.labels_path, img_name + ".png")).convert('RGB')
 
 
         sample = {'image': base_img, 'label': label_img}
